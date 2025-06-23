@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+<head>
+    <title>Your Results</title>
+    <style>
+        table { border-collapse: collapse; width: 50%; }
+        td, th { border: 1px solid black; padding: 8px; text-align: center; }
+    </style>
+</head>
+<body>
+    {% for board, sprints in table_data.items() %}
+    <h1>{{ board }} </h1>
+    <table>
+        <!-- there should always be two rows: the sprint name and the things in the sprint-->
+        <tr>
+            {% for sprint in sprints.keys() %}
+            <th>{{ sprint }}</th>
+            {% endfor %}
+        </tr>
+        <tr>
+            {% for tasks in sprints.values() %}
+            <td>{{ '<br>'.join(tasks) | safe }}</td>
+            {% endfor %}
+        </tr>
+    </table>
+    {% endfor %}
+</body>
+</html>

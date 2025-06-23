@@ -48,15 +48,15 @@ def result():
     auth = HTTPBasicAuth(EMAIL, API_TOKEN)
     headers = {"Accept": "application/json"}
 
-    # --- STEP 1: Get Board ID ---
-    def get_board_id(project_key):
+    # --- STEP 1: Get All of the Boards ---
+    def get_board_id_and_name(project_key):
         url = f"{JIRA_BASE_URL}/rest/agile/1.0/board?projectKeyOrId={project_key}"
         response = requests.get(url, headers=headers, auth=auth)
         response.raise_for_status()
         boards = response.json()["values"]
         if not boards:
             raise Exception(f"No boards found for project {project_key}")
-        return boards[0]["id"]
+        return (boards[0]["id"], boards[0]["name"])
 
     # --- STEP 2: Get All Sprints on the Board ---
     ## NOTE: all sprints will appear in the order they appear in Jira, which should be chronological from top to bottom.
@@ -75,32 +75,34 @@ def result():
         return [(issue["key"], issue["fields"]["summary"]) for issue in issues]
 
     # --- MAIN FLOW ---
-    board_id = get_board_id(PROJECT_KEY)
-    result_string = f"Board ID: {board_id}<br>"
-    # print(f"Board ID: {board_id}")
+    table_data = {}
 
-    sprints = get_sprints(board_id)
-    result_string += f"<br>Found {len(sprints)} sprints:<br>"
+    # right now we're only getting one board, but I want to switch it to look for all boards eventually
+    board_id_and_name = get_board_id_and_name(PROJECT_KEY)
+    # result_string = f"Board ID: {board_id_and_name[0]}<br>"
+    table_data[board_id_and_name[1]] = {}
+
+    sprints = get_sprints(board_id_and_name[0])
+    # result_string += f"<br>Found {len(sprints)} sprints:<br>"
     # print(f"\nFound {len(sprints)} sprints:\n")
 
     for sprint in sprints:
-        result_string += f"<br>Sprint: {sprint['name']} (ID: {sprint['id']})<br>"
+        cur_sprint = []
+        # result_string += f"<br>Sprint: {sprint['name']} (ID: {sprint['id']})<br>"
         # print(f"Sprint: {sprint['name']} (ID: {sprint['id']})")
         issues = get_issues_for_sprint(sprint['id'])
         if not issues:
-            result_string += "  No issues.<br>"
+            cur_sprint.append("No issues.")
             # print("  No issues.")
         for key, summary in issues:
-            result_string += f"  - {key}: {summary}<br>"
+            cur_sprint.append(f"  - {key}: {summary}")
             # print(f"  - {key}: {summary}")
-        # print()
+        table_data[board_id_and_name[1]][sprint['name']] = cur_sprint
+    # print(table_data)
 
     
-    # temporary return
-    return result_string
-
-    # work in progress - we'll be using a template and formatted data as we figure that out
-    # return render_template('result.html', data=form_data)
+    # return table_data
+    return render_template("results.html", table_data=table_data)
 
 if __name__ == '__main__':
     app.run(debug=True)
