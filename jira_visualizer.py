@@ -49,14 +49,14 @@ def result():
     headers = {"Accept": "application/json"}
 
     # --- STEP 1: Get All of the Boards ---
-    def get_board_id_and_name(project_key):
+    def get_boards(project_key):
         url = f"{JIRA_BASE_URL}/rest/agile/1.0/board?projectKeyOrId={project_key}"
         response = requests.get(url, headers=headers, auth=auth)
         response.raise_for_status()
         boards = response.json()["values"]
         if not boards:
             raise Exception(f"No boards found for project {project_key}")
-        return (boards[0]["id"], boards[0]["name"])
+        return boards
 
     # --- STEP 2: Get All Sprints on the Board ---
     ## NOTE: all sprints will appear in the order they appear in Jira, which should be chronological from top to bottom.
@@ -78,27 +78,31 @@ def result():
     table_data = {}
 
     # right now we're only getting one board, but I want to switch it to look for all boards eventually
-    board_id_and_name = get_board_id_and_name(PROJECT_KEY)
-    # result_string = f"Board ID: {board_id_and_name[0]}<br>"
-    table_data[board_id_and_name[1]] = {}
+    boards_from_project = get_boards(PROJECT_KEY)
+    for board in boards_from_project:
+        board_id = board['id']
+        board_name = board['name']
+        # board_id_and_name = get_board_id_and_name(PROJECT_KEY)
+        # result_string = f"Board ID: {board_id_and_name[0]}<br>"
+        table_data[board_name] = {}
 
-    sprints = get_sprints(board_id_and_name[0])
-    # result_string += f"<br>Found {len(sprints)} sprints:<br>"
-    # print(f"\nFound {len(sprints)} sprints:\n")
+        sprints = get_sprints(board_id)
+        # result_string += f"<br>Found {len(sprints)} sprints:<br>"
+        # print(f"\nFound {len(sprints)} sprints:\n")
 
-    for sprint in sprints:
-        cur_sprint = []
-        # result_string += f"<br>Sprint: {sprint['name']} (ID: {sprint['id']})<br>"
-        # print(f"Sprint: {sprint['name']} (ID: {sprint['id']})")
-        issues = get_issues_for_sprint(sprint['id'])
-        if not issues:
-            cur_sprint.append("No issues.")
-            # print("  No issues.")
-        for key, summary in issues:
-            cur_sprint.append(f"  - {key}: {summary}")
-            # print(f"  - {key}: {summary}")
-        table_data[board_id_and_name[1]][sprint['name']] = cur_sprint
-    # print(table_data)
+        for sprint in sprints:
+            cur_sprint = []
+            # result_string += f"<br>Sprint: {sprint['name']} (ID: {sprint['id']})<br>"
+            # print(f"Sprint: {sprint['name']} (ID: {sprint['id']})")
+            issues = get_issues_for_sprint(sprint['id'])
+            if not issues:
+                cur_sprint.append("No issues.")
+                # print("  No issues.")
+            for key, summary in issues:
+                cur_sprint.append(f"  - {key}: {summary}")
+                # print(f"  - {key}: {summary}")
+            table_data[board_name][sprint['name']] = cur_sprint
+        # print(table_data)
 
     
     # return table_data
