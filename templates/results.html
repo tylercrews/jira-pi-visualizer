@@ -8,8 +8,24 @@
     </style>
 </head>
 <body>
-    {% for board, sprints in table_data.items() %}
-    <h1>{{ board }} </h1>
+    <h1>Your Results</h1>
+    <h2>Scheduling Risks</h2>
+    <table>
+        <tr>
+            <th>Conflicts</th>
+            <td>{{conflict_table_data}}</td>
+        </tr>
+        <tr>
+            <th>External Team Dependencies</th>
+            <td>{{conflict_table_data}}</td>
+        </tr>
+        <tr>
+            <th>Internal Team Dependencies</th>
+            <td>{{conflict_table_data}}</td>
+        </tr>
+    </table>
+    {% for board, sprints in sprint_table_data.items() %}
+    <h2>{{ board }} </h2>
     <table>
         <!-- there should always be two rows: the sprint name and the things in the sprint-->
         <tr>

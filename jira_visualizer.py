@@ -73,40 +73,58 @@ def result():
         response.raise_for_status()
         issues = response.json()["issues"]
         return [(issue["key"], issue["fields"]["summary"]) for issue in issues]
+    
+    def add_sprint_order_to_map(sprints_from_board):
+        """ there are two issues to account for here, and why we need to create this map: 
+            1. jira users may not input sprint start and end dates for proper ordering
+            2. jira users may rearrange sprints on a whim, which would break ordering by id
+            luckily the order of the sprints in the board is the order the sprints are occurring
+            so to check if an issue/task is in the correct order we need to map each sprint id to a value
+            and the value will just be the order it appears in the sprint count."""
+        sprint_order = 0
+        for sprint in sprints_from_board:
+            sprint_order_map[sprint['id']] = sprint_order
+            sprint_order += 1
 
-    # --- MAIN FLOW ---
-    table_data = {}
-
-    # right now we're only getting one board, but I want to switch it to look for all boards eventually
+    sprint_table_data = {}
+    conflict_table_data = {}
+    sprint_order_map = {}
+    
     boards_from_project = get_boards(PROJECT_KEY)
+    # two loops through the boards are necessary:
+    # loop 1 lets us see the order of the sprints
+    # loop 2 will then allow us to add all our data, and figure out which issues are not in order
+    for board in boards_from_project:
+        board_id = board['id']
+        sprints = get_sprints(board_id)
+        add_sprint_order_to_map(sprints)
+
     for board in boards_from_project:
         board_id = board['id']
         board_name = board['name']
         # board_id_and_name = get_board_id_and_name(PROJECT_KEY)
-        # result_string = f"Board ID: {board_id_and_name[0]}<br>"
-        table_data[board_name] = {}
+        sprint_table_data[board_name] = {}
 
         sprints = get_sprints(board_id)
-        # result_string += f"<br>Found {len(sprints)} sprints:<br>"
         # print(f"\nFound {len(sprints)} sprints:\n")
 
         for sprint in sprints:
             cur_sprint = []
-            # result_string += f"<br>Sprint: {sprint['name']} (ID: {sprint['id']})<br>"
             # print(f"Sprint: {sprint['name']} (ID: {sprint['id']})")
             issues = get_issues_for_sprint(sprint['id'])
             if not issues:
                 cur_sprint.append("No issues.")
                 # print("  No issues.")
             for key, summary in issues:
+                # TODO: create a more detailed way of documenting the issue, might create a class here so that we can make "sticky notes" on the board with all relevant information
                 cur_sprint.append(f"  - {key}: {summary}")
                 # print(f"  - {key}: {summary}")
-            table_data[board_name][sprint['name']] = cur_sprint
+            sprint_table_data[board_name][sprint['name']] = cur_sprint
         # print(table_data)
 
     
     # return table_data
-    return render_template("results.html", table_data=table_data)
+    return render_template("results.html", sprint_table_data=sprint_table_data, conflict_table_data=sprint_order_map) #sprint order map is placeholder, we'll fill up the conflict data soon, just testing that this works first
 
 if __name__ == '__main__':
     app.run(debug=True)
