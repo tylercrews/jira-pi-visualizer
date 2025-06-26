@@ -72,8 +72,14 @@ def result():
         response = requests.get(url, headers=headers, auth=auth)
         response.raise_for_status()
         issues = response.json()["issues"]
-        return [(issue["key"], issue["fields"]["summary"]) for issue in issues]
+        return [(issue["key"], issue["fields"]["summary"], issue) for issue in issues]
     
+    def get_sprint_id(issue):
+        sprint_field = issue["fields"].get("customfield_10007", [])
+        if isinstance(sprint_field, list) and sprint_field:
+            return sprint_field[-1]["id"]
+        return None
+
     def add_sprint_order_to_map(sprints_from_board):
         """ there are two issues to account for here, and why we need to create this map: 
             1. jira users may not input sprint start and end dates for proper ordering
@@ -87,7 +93,11 @@ def result():
             sprint_order += 1
 
     sprint_table_data = {}
-    conflict_table_data = {}
+    conflict_table_data = {
+        'conflicts': set(),
+        'internal': set(),
+        'external': set()
+    }
     sprint_order_map = {}
     
     boards_from_project = get_boards(PROJECT_KEY)
@@ -115,16 +125,36 @@ def result():
             if not issues:
                 cur_sprint.append("No issues.")
                 # print("  No issues.")
-            for key, summary in issues:
+            for key, summary, issue in issues:
+                sprint_table_data[board_name][sprint['name']] = cur_sprint
                 # TODO: create a more detailed way of documenting the issue, might create a class here so that we can make "sticky notes" on the board with all relevant information
                 cur_sprint.append(f"  - {key}: {summary}")
                 # print(f"  - {key}: {summary}")
-            sprint_table_data[board_name][sprint['name']] = cur_sprint
-        # print(table_data)
+                # after adding this issue/story to the list, check its dependencies for any conflicts
+                current_sprint_order = sprint_order_map[sprint['id']]
+
+                for link in issue.get("fields", {}).get("issuelinks", []):
+                    if "inwardIssue" in link:
+                        # if there's an inward issue that means something comes before this
+                        inward_issue_type = link['type']['inward']
+                        blocker = link["inwardIssue"]
+                        blocker_sprint = get_sprint_id(blocker)
+                        blocker_sprint_order = sprint_order_map[blocker_sprint] if blocker_sprint != None else float('inf')
+
+                        problem_tuple = (issue['key'], issue['fields']['summary'], sprint['id'], inward_issue_type, blocker['key'], blocker['fields']['summary'], blocker_sprint)
+                        if blocker_sprint_order == current_sprint_order:
+                            if sprint['id'] == blocker_sprint:
+                                # same sprint means same board, so it's an internal dependency
+                                conflict_table_data['internal'].add(problem_tuple)
+                            else:
+                                conflict_table_data['external'].add(problem_tuple)
+                        elif blocker_sprint_order > current_sprint_order:
+                            conflict_table_data['conflicts'].add(problem_tuple)
+        # # print(table_data)
 
     
     # return table_data
-    return render_template("results.html", sprint_table_data=sprint_table_data, conflict_table_data=sprint_order_map) #sprint order map is placeholder, we'll fill up the conflict data soon, just testing that this works first
+    return render_template("results.html", sprint_table_data=sprint_table_data, conflict_table_data=conflict_table_data) #sprint order map is placeholder, we'll fill up the conflict data soon, just testing that this works first
 
 if __name__ == '__main__':
     app.run(debug=True)

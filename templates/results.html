@@ -13,15 +13,15 @@
     <table>
         <tr>
             <th>Conflicts</th>
-            <td>{{conflict_table_data}}</td>
+            <td>{{conflict_table_data.conflicts}}</td>
         </tr>
         <tr>
             <th>External Team Dependencies</th>
-            <td>{{conflict_table_data}}</td>
+            <td>{{conflict_table_data.external}}</td>
         </tr>
         <tr>
             <th>Internal Team Dependencies</th>
-            <td>{{conflict_table_data}}</td>
+            <td>{{conflict_table_data.internal}}</td>
         </tr>
     </table>
     {% for board, sprints in sprint_table_data.items() %}
