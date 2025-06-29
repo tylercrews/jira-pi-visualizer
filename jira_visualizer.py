@@ -72,12 +72,19 @@ def result():
         response = requests.get(url, headers=headers, auth=auth)
         response.raise_for_status()
         issues = response.json()["issues"]
-        return [(issue["key"], issue["fields"]["summary"], issue) for issue in issues]
+        # print(issues)
+        return [(issue["key"], issue["fields"]["summary"], issue['id'], issue) for issue in issues]
     
     def get_sprint_id(issue):
-        sprint_field = issue["fields"].get("customfield_10007", [])
+        sprint_field = issue["fields"].get("customfield_10007")
+        # print(f'sprint field: {sprint_field}')
         if isinstance(sprint_field, list) and sprint_field:
-            return sprint_field[-1]["id"]
+            if isinstance(sprint_field[-1], dict):
+                return sprint_field[-1].get("id")
+            elif isinstance(sprint_field[-1], str):
+                match = re.search(r"id=(\d+)", sprint_field[-1])
+                if match:
+                    return int(match.group(1))
         return None
 
     def add_sprint_order_to_map(sprints_from_board):
@@ -90,6 +97,10 @@ def result():
         sprint_order = 0
         for sprint in sprints_from_board:
             sprint_order_map[sprint['id']] = sprint_order
+            issues = get_issues_for_sprint(sprint['id'])
+            for issue in issues:
+                # print(issue)
+                issue_order_map[issue[2]] = (sprint_order, sprint['id'])
             sprint_order += 1
 
     sprint_table_data = {}
@@ -99,6 +110,7 @@ def result():
         'external': set()
     }
     sprint_order_map = {}
+    issue_order_map = {}
     
     boards_from_project = get_boards(PROJECT_KEY)
     # two loops through the boards are necessary:
@@ -125,30 +137,28 @@ def result():
             if not issues:
                 cur_sprint.append("No issues.")
                 # print("  No issues.")
-            for key, summary, issue in issues:
-                sprint_table_data[board_name][sprint['name']] = cur_sprint
+            for key, summary, cur_issue_id, issue in issues:
+                cur_issue_sprint_order, cur_issue_sprint_id = issue_order_map[cur_issue_id]
                 # TODO: create a more detailed way of documenting the issue, might create a class here so that we can make "sticky notes" on the board with all relevant information
                 cur_sprint.append(f"  - {key}: {summary}")
                 # print(f"  - {key}: {summary}")
-                # after adding this issue/story to the list, check its dependencies for any conflicts
-                current_sprint_order = sprint_order_map[sprint['id']]
 
                 for link in issue.get("fields", {}).get("issuelinks", []):
                     if "inwardIssue" in link:
                         # if there's an inward issue that means something comes before this
                         inward_issue_type = link['type']['inward']
                         blocker = link["inwardIssue"]
-                        blocker_sprint = get_sprint_id(blocker)
-                        blocker_sprint_order = sprint_order_map[blocker_sprint] if blocker_sprint != None else float('inf')
+                        blocker_issue_id = blocker['id']
+                        blocker_issue_sprint_order, blocker_issue_sprint_id = issue_order_map.get(blocker_issue_id, (float('inf'), float('inf')))
 
-                        problem_tuple = (issue['key'], issue['fields']['summary'], sprint['id'], inward_issue_type, blocker['key'], blocker['fields']['summary'], blocker_sprint)
-                        if blocker_sprint_order == current_sprint_order:
-                            if sprint['id'] == blocker_sprint:
+                        problem_tuple = (issue['key'], issue['fields']['summary'], cur_issue_id, cur_issue_sprint_order, cur_issue_sprint_id, inward_issue_type, blocker['key'], blocker['fields']['summary'], blocker_issue_id, blocker_issue_sprint_order, blocker_issue_sprint_id)
+                        if blocker_issue_sprint_order == cur_issue_sprint_order:
+                            if cur_issue_sprint_id == blocker_issue_sprint_id:
                                 # same sprint means same board, so it's an internal dependency
                                 conflict_table_data['internal'].add(problem_tuple)
                             else:
                                 conflict_table_data['external'].add(problem_tuple)
-                        elif blocker_sprint_order > current_sprint_order:
+                        elif blocker_issue_sprint_order > cur_issue_sprint_order:
                             conflict_table_data['conflicts'].add(problem_tuple)
         # # print(table_data)
 
