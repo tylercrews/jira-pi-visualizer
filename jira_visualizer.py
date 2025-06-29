@@ -138,6 +138,7 @@ def result():
                 cur_sprint.append("No issues.")
                 # print("  No issues.")
             for key, summary, cur_issue_id, issue in issues:
+                sprint_table_data[board_name][sprint['name']] = cur_sprint
                 cur_issue_sprint_order, cur_issue_sprint_id = issue_order_map[cur_issue_id]
                 # TODO: create a more detailed way of documenting the issue, might create a class here so that we can make "sticky notes" on the board with all relevant information
                 cur_sprint.append(f"  - {key}: {summary}")

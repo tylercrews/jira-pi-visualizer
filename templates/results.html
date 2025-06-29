@@ -30,7 +30,9 @@
                  9: blocker_issue_sprint_order, 
                  10: blocker_issue_sprint_id
                  -->
-                <div><span style="color: red; font-weight: bold;"> ! </span> {{conflict[0]}}: {{conflict[1]}} occurs in sprint {{conflict[4]}}, but {{conflict[5]}} {{conflict[6]}}: {{conflict[7]}}, which {{('occurs in sprint ' ~ conflict[9]) if conflict[9] <=100000 else 'is still in the backlog'}}</div> <br>
+                <div><span style="color: red; font-weight: bold;"> ! </span> {{conflict[0]}}: "{{conflict[1]}}" occurs in sprint {{conflict[4]}}, <br>
+                    but {{conflict[5]}} {{conflict[6]}}: {{conflict[7]}}, <br>
+                    which {{('occurs later, in sprint ' ~ conflict[9] ~ '.') if conflict[9] <=100000 else 'is still in the backlog'}}</div> <br>
                 {% endfor %}
             </td>
         </tr>
@@ -40,7 +42,9 @@
             <th>External Team Dependencies</th>
             <td>
                 {% for conflict in conflict_table_data.external %}
-                <div>⚠️ {{conflict[0]}}: {{conflict[1]}} occurs in sprint {{conflict[4]}}, but {{conflict[5]}} {{conflict[6]}}: {{conflict[7]}}, which {{('occurs in sprint ' ~ conflict[9]) if conflict[9] <=100000 else 'is still in the backlog'}} </div><br>
+                <div>⚠️ {{conflict[0]}}: "{{conflict[1]}}" occurs in sprint {{conflict[4]}}, <br> 
+                    but {{conflict[5]}} {{conflict[6]}}: {{conflict[7]}}, <br>
+                    which {{('occurs later, in sprint ' ~ conflict[9] ~ '.') if conflict[9] <=100000 else 'is still in the backlog.'}} </div><br>
                 {% endfor %}
             </td>
         </tr>
@@ -50,7 +54,9 @@
             <th>Internal Team Dependencies</th>
             <td>
                 {% for conflict in conflict_table_data.internal %}
-                <div>⚠️ {{conflict[0]}}: {{conflict[1]}} occurs in sprint {{conflict[4]}}, but {{conflict[5]}} {{conflict[6]}}: {{conflict[7]}}, which {{('occurs in sprint ' ~ conflict[9]) if conflict[9] <=100000 else 'is still in the backlog'}}</div> <br>
+                <div>⚠️ {{conflict[0]}}: "{{conflict[1]}}" occurs in sprint {{conflict[4]}}, <br> 
+                    but {{conflict[5]}} {{conflict[6]}}: {{conflict[7]}}, <br>
+                    which {{('occurs later, in sprint ' ~ conflict[9] ~ '.') if conflict[9] <=100000 else 'is still in the backlog'}}
                 {% endfor %}
             </td>
         </tr>
