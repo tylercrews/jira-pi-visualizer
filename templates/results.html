@@ -10,20 +10,55 @@
 <body>
     <h1>Your Results</h1>
     <h2>Scheduling Risks</h2>
+    {% if conflict_table_data.external or conflict_table_data.internal or conflict_table_data.conflicts%}
     <table>
+        {% if conflict_table_data.conflicts%}
         <tr>
             <th>Conflicts</th>
-            <td>{{conflict_table_data.conflicts}}</td>
+            <td>
+                {% for conflict in conflict_table_data.conflicts %}
+                <!-- format for conflicts is 
+                 0: issue['key'], 
+                 1: issue['fields']['summary'], 
+                 2: cur_issue_id, 
+                 3: cur_issue_sprint_order, 
+                 4: cur_issue_sprint_id, 
+                 5: inward_issue_type, 
+                 6: blocker['key'], 
+                 7: blocker['fields']['summary'], 
+                 8: blocker_issue_id, 
+                 9: blocker_issue_sprint_order, 
+                 10: blocker_issue_sprint_id
+                 -->
+                <div><span style="color: red; font-weight: bold;"> ! </span> {{conflict[0]}}: {{conflict[1]}} occurs in sprint {{conflict[4]}}, but {{conflict[5]}} {{conflict[6]}}: {{conflict[7]}}, which {{('occurs in sprint ' ~ conflict[9]) if conflict[9] <=100000 else 'is still in the backlog'}}</div> <br>
+                {% endfor %}
+            </td>
         </tr>
+        {% endif %}
+        {% if conflict_table_data.external%}
         <tr>
             <th>External Team Dependencies</th>
-            <td>{{conflict_table_data.external}}</td>
+            <td>
+                {% for conflict in conflict_table_data.external %}
+                <div>⚠️ {{conflict[0]}}: {{conflict[1]}} occurs in sprint {{conflict[4]}}, but {{conflict[5]}} {{conflict[6]}}: {{conflict[7]}}, which {{('occurs in sprint ' ~ conflict[9]) if conflict[9] <=100000 else 'is still in the backlog'}} </div><br>
+                {% endfor %}
+            </td>
         </tr>
+        {% endif %}
+        {% if conflict_table_data.internal %}
         <tr>
             <th>Internal Team Dependencies</th>
-            <td>{{conflict_table_data.internal}}</td>
+            <td>
+                {% for conflict in conflict_table_data.internal %}
+                <div>⚠️ {{conflict[0]}}: {{conflict[1]}} occurs in sprint {{conflict[4]}}, but {{conflict[5]}} {{conflict[6]}}: {{conflict[7]}}, which {{('occurs in sprint ' ~ conflict[9]) if conflict[9] <=100000 else 'is still in the backlog'}}</div> <br>
+                {% endfor %}
+            </td>
         </tr>
+        {% endif %}
     </table>
+    {% else %}
+    <h3> ✅ There were no scheduling conflicts found in this project.</h3>
+    {% endif %}
     {% for board, sprints in sprint_table_data.items() %}
     <h2>{{ board }} </h2>
     <table>
