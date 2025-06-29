@@ -31,7 +31,7 @@
                  10: blocker_issue_sprint_id
                  -->
                 <div><span style="color: red; font-weight: bold;"> ! </span> {{conflict[0]}}: "{{conflict[1]}}" occurs in sprint {{conflict[4]}}, <br>
-                    but {{conflict[5]}} {{conflict[6]}}: {{conflict[7]}}, <br>
+                    but {{conflict[5]}} {{conflict[6]}}: "{{conflict[7]}}", <br>
                     which {{('occurs later, in sprint ' ~ conflict[9] ~ '.') if conflict[9] <=100000 else 'is still in the backlog'}}</div> <br>
                 {% endfor %}
             </td>
@@ -43,8 +43,8 @@
             <td>
                 {% for conflict in conflict_table_data.external %}
                 <div>⚠️ {{conflict[0]}}: "{{conflict[1]}}" occurs in sprint {{conflict[4]}}, <br> 
-                    but {{conflict[5]}} {{conflict[6]}}: {{conflict[7]}}, <br>
-                    which {{('occurs later, in sprint ' ~ conflict[9] ~ '.') if conflict[9] <=100000 else 'is still in the backlog.'}} </div><br>
+                    but {{conflict[5]}} {{conflict[6]}}: "{{conflict[7]}}", <br>
+                    which occurs on another board during the same sprint. </div><br>
                 {% endfor %}
             </td>
         </tr>
@@ -55,8 +55,8 @@
             <td>
                 {% for conflict in conflict_table_data.internal %}
                 <div>⚠️ {{conflict[0]}}: "{{conflict[1]}}" occurs in sprint {{conflict[4]}}, <br> 
-                    but {{conflict[5]}} {{conflict[6]}}: {{conflict[7]}}, <br>
-                    which {{('occurs later, in sprint ' ~ conflict[9] ~ '.') if conflict[9] <=100000 else 'is still in the backlog'}}
+                    but {{conflict[5]}} {{conflict[6]}}: "{{conflict[7]}}", <br>
+                    which occurs during the same sprint.
                 {% endfor %}
             </td>
         </tr>
